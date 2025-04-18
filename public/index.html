@@ -8,17 +8,50 @@
   </head>
   <body>
     <div id="chat-container">
-      <h1>ChatWave 💬</h1>
-      <div id="chat-box"></div>
-      <input
-        type="text"
-        id="message-input"
-        placeholder="Type your message..."
-      />
-      <button id="send-btn">Send</button>
+      <div id="messages">
+        <!-- Messages will appear here -->
+      </div>
+
+      <div id="footer">
+        <div id="username"></div>
+        <input type="text" id="message" placeholder="Type your message" />
+        <button id="sendBtn">Send</button>
+      </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
+    <script>
+      const socket = io();
+
+      // Ask user for their name
+      const username = prompt("Enter your name:");
+      document.getElementById("username").textContent = username;
+
+      // Emit join event to notify the server
+      socket.emit("join", username);
+
+      // Handle incoming messages
+      socket.on("receive-message", (msgObj) => {
+        const msgElement = document.createElement("div");
+        msgElement.classList.add("message");
+        msgElement.innerHTML = `
+        <b>${msgObj.username}:</b> ${msgObj.text} <span class="time">${msgObj.time}</span>
+      `;
+        document.getElementById("messages").appendChild(msgElement);
+      });
+
+      // Send a message when the user clicks "Send"
+      document.getElementById("sendBtn").addEventListener("click", () => {
+        const msg = document.getElementById("message").value;
+        const msgObj = {
+          text: msg,
+          username: username,
+          time: new Date().toLocaleTimeString(),
+        };
+
+        socket.emit("send-message", msgObj); // Emit the message to the server
+        document.getElementById("message").value = ""; // Clear the input field
+      });
+    </script>
   </body>
 </html>

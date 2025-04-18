@@ -8,36 +8,41 @@ const io = socketIo(server);
 
 app.use(express.static("public"));
 
-const users = {}; // Tracks users by socket ID
+const users = {}; // Stores users by socket ID
 
-// When a user joins, send a welcome message
 io.on("connection", (socket) => {
   console.log("A user connected");
 
-  // Handle new users joining
+  // When a user joins
   socket.on("join", (username) => {
-    users[socket.id] = username; // Save the username
+    users[socket.id] = username;
 
-    // Send a message to all other users saying "X has joined"
+    // Notify everyone else
     socket.broadcast.emit("receive-message", {
-      text: `🟢 ${username} has joined the chat!`,
       username: "System",
+      text: `🟢 ${username} has joined the chat.`,
       time: new Date().toLocaleTimeString(),
     });
   });
 
-  // Handle receiving messages
+  // Handle message sending
   socket.on("send-message", (msgObj) => {
-    io.emit("receive-message", msgObj); // Broadcast the message to all users
+    io.emit("receive-message", msgObj);
   });
 
-  // Handle user disconnect
+  // When a user disconnects
   socket.on("disconnect", () => {
-    console.log("A user disconnected");
+    const username = users[socket.id];
+    if (username) {
+      socket.broadcast.emit("receive-message", {
+        username: "System",
+        text: `🔴 ${username} left the chat.`,
+        time: new Date().toLocaleTimeString(),
+      });
+      delete users[socket.id];
+    }
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

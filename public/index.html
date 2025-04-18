@@ -1,57 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ChatWave</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: Arial;
+        background: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+      .chat-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+      }
+      .messages {
+        flex: 1;
+        width: 80%;
+        overflow-y: auto;
+        padding: 10px;
+        background: #fff;
+        margin-top: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .input-box {
+        display: flex;
+        width: 80%;
+        margin: 10px 0;
+      }
+      input {
+        flex: 1;
+        padding: 10px;
+      }
+      button {
+        padding: 10px;
+        background: #0066ff;
+        color: white;
+        border: none;
+      }
+    </style>
   </head>
   <body>
-    <div id="chat-container">
-      <div id="messages">
-        <!-- Messages will appear here -->
-      </div>
-
-      <div id="footer">
-        <div id="username"></div>
-        <input type="text" id="message" placeholder="Type your message" />
-        <button id="sendBtn">Send</button>
+    <div class="chat-container">
+      <div id="messages" class="messages"></div>
+      <div class="input-box">
+        <input type="text" id="messageInput" placeholder="Type a message..." />
+        <button onclick="sendMessage()">Send</button>
       </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-      const socket = io();
-
-      // Ask user for their name
-      const username = prompt("Enter your name:");
-      document.getElementById("username").textContent = username;
-
-      // Emit join event to notify the server
-      socket.emit("join", username);
-
-      // Handle incoming messages
-      socket.on("receive-message", (msgObj) => {
-        const msgElement = document.createElement("div");
-        msgElement.classList.add("message");
-        msgElement.innerHTML = `
-        <b>${msgObj.username}:</b> ${msgObj.text} <span class="time">${msgObj.time}</span>
-      `;
-        document.getElementById("messages").appendChild(msgElement);
-      });
-
-      // Send a message when the user clicks "Send"
-      document.getElementById("sendBtn").addEventListener("click", () => {
-        const msg = document.getElementById("message").value;
-        const msgObj = {
-          text: msg,
-          username: username,
-          time: new Date().toLocaleTimeString(),
-        };
-
-        socket.emit("send-message", msgObj); // Emit the message to the server
-        document.getElementById("message").value = ""; // Clear the input field
-      });
-    </script>
+    <script src="client.js"></script>
   </body>
 </html>

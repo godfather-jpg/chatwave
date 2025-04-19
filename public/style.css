@@ -1,27 +1,20 @@
-/* Make everything responsive and mobile-friendly */
+/* Mobile-first responsive chat */
 body {
   font-family: sans-serif;
   background-color: #f9f9f9;
   margin: 0;
   padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
 .chat-container {
-  width: 95%;
-  max-width: 400px;
-  height: 90vh;
-  max-height: 800px; /* Added maximum height for larger screens */
+  width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  border: 1px solid black;
-  border-radius: 8px;
   background-color: #fff;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 }
 
 .chat-box {
@@ -29,66 +22,57 @@ body {
   padding: 10px;
   overflow-y: auto;
   background: white;
-  border-top: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
   box-sizing: border-box;
 }
 
 form {
   display: flex;
   padding: 10px;
-  border-top: 1px solid #eee;
   background-color: #f1f1f1;
+  border-top: 1px solid #eee;
 }
 
 input[type="text"] {
   flex: 1;
-  padding: 10px;
+  padding: 12px;
   font-size: 16px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 20px;
+  margin-right: 10px;
 }
 
 button {
-  padding: 10px 20px;
+  padding: 0 16px;
   background-color: #0066ff;
   color: white;
   border: none;
-  border-radius: 4px;
-  margin-left: 10px;
+  border-radius: 20px;
   font-size: 16px;
-  cursor: pointer;
+  min-width: 60px;
 }
 
-/* Chat message styling */
 .message {
   margin-bottom: 10px;
-  padding: 5px;
-  border-radius: 5px;
+  padding: 8px 12px;
+  border-radius: 18px;
   background-color: #f3f3f3;
+  max-width: 80%;
 }
 
-/* Mobile responsiveness */
-@media (max-width: 600px) {
+/* Desktop responsiveness */
+@media (min-width: 600px) {
   body {
-    display: block; /* Change to block to fill entire screen */
-    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f9f9f9;
   }
 
   .chat-container {
-    width: 100%;
-    height: 100vh;
-    max-height: none; /* Remove max-height restriction on mobile */
-    border-radius: 0;
-    border: none;
-  }
-
-  .chat-box {
-    height: calc(100vh - 150px); /* Fixed height calculation */
-  }
-
-  form {
-    position: sticky;
-    bottom: 0;
+    width: 400px;
+    height: 700px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
   }
 }

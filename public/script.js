@@ -1,9 +1,12 @@
 const socket = io();
 
+// Force user to enter a non-empty username
 let username = sessionStorage.getItem("username");
 
 if (!username) {
-  username = prompt("Enter your username:");
+  while (!username || username.trim() === "") {
+    username = prompt("Enter your username (cannot be empty):");
+  }
   sessionStorage.setItem("username", username);
 }
 
@@ -48,9 +51,18 @@ socket.on("receive-message", (msg) => {
   appendMessage(msg);
 });
 
-function appendMessage({ username, text, time, isPrivate }) {
+function appendMessage({ username, text, time, isPrivate, isSystem }) {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add("message");
+
+  // Apply appropriate styling
+  if (isSystem) {
+    msgDiv.classList.add("system");
+  } else if (username === sessionStorage.getItem("username")) {
+    msgDiv.classList.add("you");
+  } else {
+    msgDiv.classList.add("others");
+  }
 
   if (isPrivate) {
     msgDiv.classList.add("private-message");

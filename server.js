@@ -19,11 +19,12 @@ io.on("connection", (socket) => {
     username = name;
     users[username] = socket.id; // Track the user's socket ID
 
+    // Notify everyone (including sender) that someone joined
     io.emit("receive-message", {
-      username: "System",
+      username: "📢 System",
       text: `${username} has joined the chat.`,
       time: new Date().toLocaleTimeString(),
-      isPrivate: false,
+      isSystem: true,
     });
 
     socket.emit("load-messages", messages); // Load previous messages
@@ -58,25 +59,27 @@ io.on("connection", (socket) => {
       // If the receiver is connected, send the private message
       io.to(receiverSocketId).emit("receive-message", message);
     } else {
-      // If receiver is not found, you can notify the sender that the user is offline
+      // If receiver is not found, notify the sender
       socket.emit("receive-message", {
-        username: "System",
+        username: "📢 System",
         text: `User ${data.receiver} is not online.`,
         time: new Date().toLocaleTimeString(),
-        isPrivate: false,
+        isSystem: true,
       });
     }
   });
 
   // Handle user disconnecting
   socket.on("disconnect", () => {
-    delete users[username]; // Remove user from the active users list
-    io.emit("receive-message", {
-      username: "System",
-      text: `${username} has left the chat.`,
-      time: new Date().toLocaleTimeString(),
-      isPrivate: false,
-    });
+    if (username) {
+      delete users[username]; // Remove user from the active users list
+      io.emit("receive-message", {
+        username: "📢 System",
+        text: `${username} has left the chat.`,
+        time: new Date().toLocaleTimeString(),
+        isSystem: true,
+      });
+    }
   });
 });
 

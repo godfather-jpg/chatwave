@@ -30,6 +30,10 @@ body {
   background: white;
   border-top: 1px solid #ccc;
   border-bottom: 1px solid #ccc;
+  max-height: calc(
+    100vh - 150px
+  ); /* Ensures chat box doesn't exceed the available height */
+  box-sizing: border-box;
 }
 
 form {
@@ -65,24 +69,22 @@ button {
   background-color: #f3f3f3;
 }
 
-/* Mobile-specific styles */
-@media screen and (max-width: 768px) {
+/* Mobile responsiveness */
+@media (max-width: 600px) {
   .chat-container {
-    height: 80vh; /* Reduce height for mobile screens */
+    width: 100%;
+    height: 100%;
   }
 
   .chat-box {
-    height: calc(
-      100% - 50px
-    ); /* Adjust height to make space for the input box */
+    max-height: calc(100vh - 140px); /* Adjust height for mobile screens */
   }
 
-  form {
-    flex-shrink: 0; /* Prevent input form from shrinking */
+  form input[type="text"] {
+    font-size: 14px;
   }
 
-  input[type="text"],
-  button {
-    font-size: 14px; /* Smaller font size for mobile screens */
+  form button {
+    font-size: 14px;
   }
 }

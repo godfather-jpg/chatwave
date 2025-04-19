@@ -65,22 +65,24 @@ button {
   background-color: #f3f3f3;
 }
 
-/* Private messages style */
-.private-message {
-  background-color: #d3d3d3;
-  font-style: italic;
-  padding: 5px;
-}
-
-@media (max-width: 600px) {
+/* Mobile-specific styles */
+@media screen and (max-width: 768px) {
   .chat-container {
-    width: 100%;
-    max-width: 100%;
-    border: none;
-    padding: 10px;
+    height: 80vh; /* Reduce height for mobile screens */
   }
 
   .chat-box {
-    height: 60vh;
+    height: calc(
+      100% - 50px
+    ); /* Adjust height to make space for the input box */
+  }
+
+  form {
+    flex-shrink: 0; /* Prevent input form from shrinking */
+  }
+
+  input[type="text"],
+  button {
+    font-size: 14px; /* Smaller font size for mobile screens */
   }
 }

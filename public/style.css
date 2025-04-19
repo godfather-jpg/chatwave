@@ -84,7 +84,7 @@ button {
   }
 
   .chat-box {
-    height: calc(100vh - 120px); /* Fixed height calculation */
+    height: calc(100vh - 150px); /* Fixed height calculation */
   }
 
   form {

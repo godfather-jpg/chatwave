@@ -1,44 +1,51 @@
 const socket = io();
-const chatBox = document.getElementById("chat-box");
-const msgInput = document.getElementById("message-input");
-const sendBtn = document.getElementById("send-btn");
+let username = localStorage.getItem("username");
 
-const userName = prompt("Enter your username:") || "Anonymous";
-const userColor = getRandomColor();
-
-sendBtn.addEventListener("click", sendMessage);
-msgInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
-});
-
-function sendMessage() {
-  const msg = msgInput.value.trim();
-  if (msg !== "") {
-    const timestamp = new Date().toLocaleTimeString();
-    socket.emit("send-message", {
-      text: msg,
-      user: userName,
-      color: userColor,
-      timestamp: timestamp,
-    });
-    msgInput.value = "";
-  }
+if (!username) {
+  username = prompt("Enter your username:");
+  localStorage.setItem("username", username);
 }
 
-socket.on("receive-message", (msgObj) => {
-  const msgEl = document.createElement("div");
-  msgEl.classList.add("message");
+socket.emit("join", username);
 
-  const formattedText = msgObj.text; // basic formatting, emoji later
-  msgEl.innerHTML = `<strong style="color:${msgObj.color}">[${msgObj.user}]:</strong> ${formattedText} <span style="font-size: 0.8em; color: gray;">[${msgObj.timestamp}]</span>`;
+const form = document.getElementById("message-form");
+const input = document.getElementById("message-input");
+const chatBox = document.getElementById("chat-box");
+const userList = document.getElementById("user-list");
 
-  chatBox.appendChild(msgEl);
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = input.value;
+  if (text.trim() === "") return;
+
+  const msgObj = {
+    text,
+    username,
+    time: new Date().toLocaleTimeString(),
+  };
+
+  socket.emit("send-message", msgObj);
+  input.value = "";
+});
+
+socket.on("receive-message", (msg) => {
+  const div = document.createElement("div");
+  div.classList.add("message");
+
+  if (msg.isPrivate) {
+    div.classList.add("private");
+  }
+
+  div.innerHTML = `<strong>${msg.username}</strong> <em>${msg.time}</em><br/>${msg.text}`;
+  chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-function getRandomColor() {
-  const letters = "0123456789ABCDEF";
-  let color = "#";
-  for (let i = 0; i < 6; i++) color += letters[Math.floor(Math.random() * 16)];
-  return color;
-}
+socket.on("user-list", (usernames) => {
+  userList.innerHTML = "";
+  usernames.forEach((name) => {
+    const li = document.createElement("li");
+    li.textContent = name;
+    userList.appendChild(li);
+  });
+});

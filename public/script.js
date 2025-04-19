@@ -1,51 +1,62 @@
 const socket = io();
-let username = localStorage.getItem("username");
+
+let username = sessionStorage.getItem("username");
 
 if (!username) {
   username = prompt("Enter your username:");
-  localStorage.setItem("username", username);
+  sessionStorage.setItem("username", username);
 }
 
 socket.emit("join", username);
 
-const form = document.getElementById("message-form");
-const input = document.getElementById("message-input");
-const chatBox = document.getElementById("chat-box");
-const userList = document.getElementById("user-list");
+const form = document.querySelector("form");
+const input = document.querySelector("#messageInput");
+const chatBox = document.querySelector(".chat-box");
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
-  const text = input.value;
-  if (text.trim() === "") return;
+  const text = input.value.trim();
+  if (text) {
+    // Check if the message is a private message
+    if (text.startsWith("/pm")) {
+      const parts = text.split(" ");
+      const receiver = parts[1];
+      const privateMessage = parts.slice(2).join(" ");
 
-  const msgObj = {
-    text,
-    username,
-    time: new Date().toLocaleTimeString(),
-  };
+      if (receiver && privateMessage) {
+        socket.emit("send-private-message", { receiver, text: privateMessage });
+      } else {
+        alert("Invalid private message format. Use /pm username message");
+      }
+    } else {
+      // Send as a regular message
+      socket.emit("send-message", { text });
+    }
 
-  socket.emit("send-message", msgObj);
-  input.value = "";
+    input.value = ""; // Clear input field
+  }
+});
+
+// Listen for the server to send messages
+socket.on("load-messages", (history) => {
+  history.forEach((msg) => {
+    appendMessage(msg);
+  });
 });
 
 socket.on("receive-message", (msg) => {
-  const div = document.createElement("div");
-  div.classList.add("message");
+  appendMessage(msg);
+});
 
-  if (msg.isPrivate) {
-    div.classList.add("private");
+function appendMessage({ username, text, time, isPrivate }) {
+  const msgDiv = document.createElement("div");
+  msgDiv.classList.add("message");
+
+  if (isPrivate) {
+    msgDiv.classList.add("private-message");
   }
 
-  div.innerHTML = `<strong>${msg.username}</strong> <em>${msg.time}</em><br/>${msg.text}`;
-  chatBox.appendChild(div);
+  msgDiv.innerHTML = `<strong>${username}</strong> <span style="font-size: 0.8em; color: gray;">[${time}]</span>: ${text}`;
+  chatBox.appendChild(msgDiv);
   chatBox.scrollTop = chatBox.scrollHeight;
-});
-
-socket.on("user-list", (usernames) => {
-  userList.innerHTML = "";
-  usernames.forEach((name) => {
-    const li = document.createElement("li");
-    li.textContent = name;
-    userList.appendChild(li);
-  });
-});
+}

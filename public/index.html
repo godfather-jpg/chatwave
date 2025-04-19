@@ -1,28 +1,22 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8" />
     <title>ChatWave</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="main-container">
-      <div class="sidebar">
-        <h3>Online Users</h3>
-        <ul id="user-list"></ul>
-      </div>
-
-      <div class="chat-container">
-        <div class="chat-box" id="chat-box"></div>
-        <form id="message-form">
-          <input
-            type="text"
-            id="message-input"
-            placeholder="Type a message..."
-            autocomplete="off"
-          />
-          <button type="submit">Send</button>
-        </form>
-      </div>
+    <div class="chat-container">
+      <div class="chat-box"></div>
+      <form>
+        <input
+          id="messageInput"
+          type="text"
+          placeholder="Type a message..."
+          autocomplete="off"
+        />
+        <button type="submit">Send</button>
+      </form>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>

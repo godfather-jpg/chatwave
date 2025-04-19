@@ -6,76 +6,80 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+const messages = []; // Stores chat history
+let users = {}; // To track connected users and their sockets
+
 app.use(express.static("public"));
 
-const users = {}; // socket.id -> username
-const usernames = {}; // username -> socket.id
-
-function broadcastUserList() {
-  io.emit("user-list", Object.values(users));
-}
-
 io.on("connection", (socket) => {
-  socket.on("join", (username) => {
-    users[socket.id] = username;
-    usernames[username] = socket.id;
+  let username;
 
-    socket.broadcast.emit("receive-message", {
-      text: `🟢 ${username} has joined the chat!`,
+  // Listen for the join event and store the username
+  socket.on("join", (name) => {
+    username = name;
+    users[username] = socket.id; // Track the user's socket ID
+
+    io.emit("receive-message", {
       username: "System",
+      text: `${username} has joined the chat.`,
       time: new Date().toLocaleTimeString(),
+      isPrivate: false,
     });
 
-    broadcastUserList();
+    socket.emit("load-messages", messages); // Load previous messages
   });
 
-  socket.on("send-message", (msgObj) => {
-    const msg = msgObj.text.trim();
+  // Listen for send-message event (public message)
+  socket.on("send-message", (msgData) => {
+    const time = new Date().toLocaleTimeString();
+    const message = {
+      username,
+      text: msgData.text,
+      time,
+      isPrivate: false,
+    };
+    messages.push(message); // Store the message in history
+    io.emit("receive-message", message); // Broadcast the message to all users
+  });
 
-    if (msg.startsWith("/pm ")) {
-      const parts = msg.split(" ");
-      const recipient = parts[1];
-      const privateMsg = parts.slice(2).join(" ");
-      const toSocket = usernames[recipient];
+  // Listen for private message event
+  socket.on("send-private-message", (data) => {
+    const time = new Date().toLocaleTimeString();
+    const message = {
+      username,
+      text: data.text,
+      time,
+      isPrivate: true,
+    };
 
-      if (toSocket) {
-        const formatted = {
-          text: `(Private) ${privateMsg}`,
-          username: users[socket.id],
-          time: new Date().toLocaleTimeString(),
-          isPrivate: true,
-        };
+    const receiverSocketId = users[data.receiver]; // Get the socket ID of the receiver
 
-        socket.to(toSocket).emit("receive-message", formatted);
-        socket.emit("receive-message", formatted);
-      } else {
-        socket.emit("receive-message", {
-          text: `❌ User "${recipient}" not found.`,
-          username: "System",
-          time: new Date().toLocaleTimeString(),
-        });
-      }
+    if (receiverSocketId) {
+      // If the receiver is connected, send the private message
+      io.to(receiverSocketId).emit("receive-message", message);
     } else {
-      io.emit("receive-message", msgObj);
-    }
-  });
-
-  socket.on("disconnect", () => {
-    const username = users[socket.id];
-    if (username) {
-      delete usernames[username];
-      socket.broadcast.emit("receive-message", {
-        text: `🔴 ${username} has left the chat.`,
+      // If receiver is not found, you can notify the sender that the user is offline
+      socket.emit("receive-message", {
         username: "System",
+        text: `User ${data.receiver} is not online.`,
         time: new Date().toLocaleTimeString(),
+        isPrivate: false,
       });
     }
-    delete users[socket.id];
-    broadcastUserList();
+  });
+
+  // Handle user disconnecting
+  socket.on("disconnect", () => {
+    delete users[username]; // Remove user from the active users list
+    io.emit("receive-message", {
+      username: "System",
+      text: `${username} has left the chat.`,
+      time: new Date().toLocaleTimeString(),
+      isPrivate: false,
+    });
   });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+server.listen(3000, () => {
+  console.log("Server is running on port 3000");
 });

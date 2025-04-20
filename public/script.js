@@ -1,15 +1,22 @@
+// Initialize Socket.io
 const socket = io();
 const authModal = document.getElementById("authModal");
 const authForm = document.getElementById("authForm");
 const chatContainer = document.querySelector(".chat-container");
-const form = document.querySelector("form");
-const input = document.querySelector("#messageInput");
-const chatBox = document.querySelector(".chat-box");
-const chatHeader = document.querySelector(".chat-header");
+const chatBox = document.getElementById("chatBox");
+const messageForm = document.getElementById("messageForm");
+const messageInput = document.getElementById("messageInput");
+const statusIndicator = document.getElementById("statusIndicator");
 
-// Show auth modal when page loads
-authModal.style.display = "flex";
+// Check for existing session
+const storedUsername = sessionStorage.getItem("username");
+if (storedUsername) {
+  authModal.style.display = "none";
+  chatContainer.style.display = "flex";
+  socket.emit("join", storedUsername);
+}
 
+// Login Handler
 authForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const username = document.getElementById("authUsername").value.trim();
@@ -21,64 +28,77 @@ authForm.addEventListener("submit", (e) => {
   }
 
   if (pin !== "2411") {
-    // Change this PIN if you want
-    alert("Wrong PIN! The correct PIN is 1234");
+    alert("Incorrect PIN. Please try again.");
     return;
   }
 
-  // Hide auth modal and show chat
+  sessionStorage.setItem("username", username);
   authModal.style.display = "none";
   chatContainer.style.display = "flex";
-
-  // Store username and connect to chat
-  sessionStorage.setItem("username", username);
   socket.emit("join", username);
 });
 
-form.addEventListener("submit", (e) => {
+// Message Handler
+messageForm.addEventListener("submit", (e) => {
   e.preventDefault();
-  const text = input.value.trim();
-  if (text) {
-    socket.emit("send-message", { text });
-    input.value = "";
+  const message = messageInput.value.trim();
+  const username = sessionStorage.getItem("username");
+
+  if (message && username) {
+    socket.emit("send-message", {
+      username,
+      text: message,
+    });
+    messageInput.value = "";
   }
+});
+
+// Socket Events
+socket.on("connect", () => {
+  statusIndicator.style.color = "#4CAF50";
+});
+
+socket.on("disconnect", () => {
+  statusIndicator.style.color = "#F44336";
 });
 
 socket.on("receive-message", (msg) => {
-  appendMessage(msg);
+  appendMessage(msg, false);
 });
 
 socket.on("user-joined", (username) => {
-  appendMessage({
-    username: "System",
-    text: `${username} joined the chat`,
-    time: new Date().toLocaleTimeString(),
-    isSystem: true,
-  });
+  appendSystemMessage(`${username} joined the chat`);
 });
 
 socket.on("user-left", (username) => {
-  appendMessage({
-    username: "System",
-    text: `${username} left the chat`,
-    time: new Date().toLocaleTimeString(),
-    isSystem: true,
-  });
+  appendSystemMessage(`${username} left the chat`);
 });
 
-function appendMessage({ username, text, time, isSystem }) {
-  const msgDiv = document.createElement("div");
-  msgDiv.classList.add("message");
+// Helper Functions
+function appendMessage(msg, isYou) {
+  const messageDiv = document.createElement("div");
+  messageDiv.classList.add("message");
+  messageDiv.classList.add(isYou ? "you" : "others");
 
-  if (isSystem) {
-    msgDiv.classList.add("system");
-  } else if (username === sessionStorage.getItem("username")) {
-    msgDiv.classList.add("you");
-  } else {
-    msgDiv.classList.add("others");
-  }
+  const time = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  messageDiv.innerHTML = `
+    <strong>${msg.username}</strong>
+    <span class="message-time">${time}</span>
+    <div>${msg.text}</div>
+  `;
 
-  msgDiv.innerHTML = `<strong>${username}</strong> <span style="font-size: 0.8em; color: gray;">[${time}]</span>: ${text}`;
-  chatBox.appendChild(msgDiv);
+  chatBox.appendChild(messageDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function appendSystemMessage(text) {
+  const messageDiv = document.createElement("div");
+  messageDiv.classList.add("message");
+  messageDiv.classList.add("system");
+  messageDiv.textContent = text;
+  chatBox.appendChild(messageDiv);
   chatBox.scrollTop = chatBox.scrollHeight;
 }

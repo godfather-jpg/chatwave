@@ -2,24 +2,26 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Joychat</title>
+    <title>JoyChat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- Login Screen -->
     <div id="authModal" class="modal">
       <div class="modal-content">
-        <h2>Conect with Joychat</h2>
+        <h2>Welcome to JoyChat!</h2>
         <form id="authForm">
           <input
             type="text"
             id="authUsername"
-            placeholder="Username"
+            placeholder="Your name"
             required
           />
           <input
             type="password"
             id="authPin"
-            placeholder="Enter Chat PIN (1234)"
+            placeholder="Enter PIN: --"
             required
           />
           <button type="submit">Join Chat</button>
@@ -27,15 +29,20 @@
       </div>
     </div>
 
+    <!-- Chat Interface -->
     <div class="chat-container">
-      <div class="chat-header">Joychat</div>
-      <div class="chat-box"></div>
-      <form>
+      <div class="chat-header">
+        <span>JoyChat</span>
+        <span id="statusIndicator">●</span>
+      </div>
+      <div class="chat-box" id="chatBox"></div>
+      <form id="messageForm">
         <input
-          id="messageInput"
           type="text"
+          id="messageInput"
           placeholder="Type a message..."
           autocomplete="off"
+          required
         />
         <button type="submit">Send</button>
       </form>

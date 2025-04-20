@@ -9,9 +9,6 @@ const io = socketIo(server);
 const messages = [];
 const users = {};
 
-// The PIN everyone needs to enter (change this if you want)
-const CHAT_PIN = "2411";
-
 app.use(express.static("public"));
 
 io.on("connection", (socket) => {
@@ -21,19 +18,20 @@ io.on("connection", (socket) => {
     username = name;
     users[username] = socket.id;
 
-    // Notify everyone
-    io.emit("user-joined", username);
-
     // Send chat history
     socket.emit("load-messages", messages);
+
+    // Notify others
+    socket.broadcast.emit("user-joined", username);
   });
 
-  socket.on("send-message", (msgData) => {
-    const time = new Date().toLocaleTimeString();
+  socket.on("send-message", (msg) => {
+    if (!username) return;
+
     const message = {
       username,
-      text: msgData.text,
-      time,
+      text: msg.text,
+      timestamp: new Date().toISOString(),
     };
 
     messages.push(message);
@@ -48,7 +46,8 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log("Server is running on port 3000");
-  console.log(`Chat PIN is: ${CHAT_PIN}`);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`JoyChat server running on port ${PORT}`);
+  console.log("System PIN: 2411");
 });

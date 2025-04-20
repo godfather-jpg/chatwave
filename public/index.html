@@ -2,11 +2,33 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>ChatWave</title>
+    <title>Joychat</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <div id="authModal" class="modal">
+      <div class="modal-content">
+        <h2>Conect with Joychat</h2>
+        <form id="authForm">
+          <input
+            type="text"
+            id="authUsername"
+            placeholder="Username"
+            required
+          />
+          <input
+            type="password"
+            id="authPin"
+            placeholder="Enter Chat PIN (1234)"
+            required
+          />
+          <button type="submit">Join Chat</button>
+        </form>
+      </div>
+    </div>
+
     <div class="chat-container">
+      <div class="chat-header">Joychat</div>
       <div class="chat-box"></div>
       <form>
         <input

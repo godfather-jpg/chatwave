@@ -1,104 +1,256 @@
-// Initialize Socket.io
 const socket = io();
-const authModal = document.getElementById("authModal");
-const authForm = document.getElementById("authForm");
-const chatContainer = document.querySelector(".chat-container");
-const chatBox = document.getElementById("chatBox");
-const messageForm = document.getElementById("messageForm");
-const messageInput = document.getElementById("messageInput");
-const statusIndicator = document.getElementById("statusIndicator");
+let currentUser = null;
+let currentRoom = null;
 
-// Check for existing session
-const storedUsername = sessionStorage.getItem("username");
-if (storedUsername) {
-  authModal.style.display = "none";
-  chatContainer.style.display = "flex";
-  socket.emit("join", storedUsername);
+// DOM Elements
+const elements = {
+  authScreen: document.getElementById("authScreen"),
+  chatInterface: document.getElementById("chatInterface"),
+  publicAuth: document.getElementById("publicAuth"),
+  privateAuth: document.getElementById("privateAuth"),
+  privateAuthStep1: document.getElementById("privateAuthStep1"),
+  privateAuthStep2: document.getElementById("privateAuthStep2"),
+  joinPublicBtn: document.getElementById("joinPublicBtn"),
+  verifyAdminBtn: document.getElementById("verifyAdminBtn"),
+  createRoomBtn: document.getElementById("createRoomBtn"),
+  joinPrivateBtn: document.getElementById("joinPrivateBtn"),
+  chatBox: document.getElementById("chatBox"),
+  messageForm: document.getElementById("messageForm"),
+  messageInput: document.getElementById("messageInput"),
+  privateRoomsList: document.getElementById("privateRoomsList"),
+  roomTitle: document.getElementById("roomTitle"),
+};
+
+// Initialize with proper event listeners
+function init() {
+  // Tab switching
+  document.querySelectorAll(".auth-tabs button").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchTab(btn.dataset.tab);
+    });
+  });
+
+  // Public chat join
+  elements.joinPublicBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    joinPublicChat();
+  });
+
+  // Admin verification
+  elements.verifyAdminBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    verifyAdmin();
+  });
+
+  // Create room
+  elements.createRoomBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    createRoom();
+  });
+
+  // Join private room
+  elements.joinPrivateBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    joinPrivateRoom();
+  });
+
+  // Send message
+  elements.messageForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
 }
 
-// Login Handler
-authForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const username = document.getElementById("authUsername").value.trim();
-  const pin = document.getElementById("authPin").value;
+// Tab switching
+function switchTab(tab) {
+  document.querySelectorAll(".auth-tabs button").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === tab);
+  });
+
+  document.querySelectorAll(".auth-form").forEach((form) => {
+    form.classList.toggle("active", form.id === `${tab}Auth`);
+  });
+}
+
+// Join public chat
+function joinPublicChat() {
+  const username = document.getElementById("publicUsername").value.trim();
+  const pin = document.getElementById("publicPin").value;
 
   if (!username) {
     alert("Please enter a username");
     return;
   }
 
-  if (pin !== "2411") {
-    alert("Incorrect PIN. Please try again.");
+  socket.emit("public-auth", { username, pin }, (res) => {
+    if (res.success) {
+      currentUser = username;
+      currentRoom = "public";
+      elements.authScreen.style.display = "none";
+      elements.chatInterface.style.display = "block";
+      elements.roomTitle.textContent = "Public Chat";
+
+      // Clear and load messages
+      elements.chatBox.innerHTML = "";
+      if (res.messages) {
+        res.messages.forEach((msg) => addMessage(msg));
+      }
+
+      // Highlight public room
+      document.querySelector(".room.public").classList.add("active");
+    } else {
+      alert(res.error || "Failed to join public chat");
+    }
+  });
+}
+
+// Verify admin
+function verifyAdmin() {
+  const pin = document.getElementById("adminPin").value;
+
+  if (!pin) {
+    alert("Please enter admin PIN");
     return;
   }
 
-  sessionStorage.setItem("username", username);
-  authModal.style.display = "none";
-  chatContainer.style.display = "flex";
-  socket.emit("join", username);
-});
+  socket.emit("private-auth", pin, (res) => {
+    if (res.success) {
+      elements.privateAuthStep1.style.display = "none";
+      elements.privateAuthStep2.style.display = "block";
+    } else {
+      alert("Invalid Admin PIN");
+    }
+  });
+}
 
-// Message Handler
-messageForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const message = messageInput.value.trim();
-  const username = sessionStorage.getItem("username");
+// Create room
+function createRoom() {
+  const roomName = prompt("Enter room name:");
+  if (!roomName) return;
 
-  if (message && username) {
-    socket.emit("send-message", {
-      username,
-      text: message,
-    });
-    messageInput.value = "";
+  const roomPin = prompt("Set room PIN:");
+  if (!roomPin) return;
+
+  socket.emit("create-room", { roomName, roomPin }, (res) => {
+    if (res.success) {
+      addRoomToList(roomName);
+      joinPrivateRoom(roomName, roomPin);
+    } else {
+      alert(res.error || "Failed to create room");
+    }
+  });
+}
+
+// Join private room
+function joinPrivateRoom(roomName = null, roomPin = null) {
+  if (!roomName) roomName = document.getElementById("roomName").value.trim();
+  if (!roomPin) roomPin = document.getElementById("roomPin").value;
+  const username = document.getElementById("privateUsername").value.trim();
+
+  if (!roomName || !username) {
+    alert("Please fill all fields");
+    return;
   }
-});
 
-// Socket Events
-socket.on("connect", () => {
-  statusIndicator.style.color = "#4CAF50";
-});
+  socket.emit("join-private", { roomName, pin: roomPin, username }, (res) => {
+    if (res.success) {
+      currentUser = username;
+      currentRoom = roomName;
+      elements.authScreen.style.display = "none";
+      elements.chatInterface.style.display = "block";
+      elements.roomTitle.textContent = roomName;
 
-socket.on("disconnect", () => {
-  statusIndicator.style.color = "#F44336";
-});
+      // Clear and load messages
+      elements.chatBox.innerHTML = "";
+      if (res.messages) {
+        res.messages.forEach((msg) => addMessage(msg));
+      }
 
-socket.on("receive-message", (msg) => {
-  appendMessage(msg, false);
-});
+      // Add to room list if new
+      addRoomToList(roomName);
 
-socket.on("user-joined", (username) => {
-  appendSystemMessage(`${username} joined the chat`);
-});
+      // Highlight current room
+      document.querySelectorAll(".room").forEach((room) => {
+        room.classList.toggle("active", room.dataset.room === roomName);
+      });
+    } else {
+      alert(res.error || "Failed to join private room");
+    }
+  });
+}
 
-socket.on("user-left", (username) => {
-  appendSystemMessage(`${username} left the chat`);
-});
+// Add room to sidebar
+function addRoomToList(roomName) {
+  // Check if room already exists
+  const existingRoom = document.querySelector(`.room[data-room="${roomName}"]`);
+  if (existingRoom) return;
 
-// Helper Functions
-function appendMessage(msg, isYou) {
+  const roomDiv = document.createElement("div");
+  roomDiv.className = "room";
+  roomDiv.dataset.room = roomName;
+  roomDiv.textContent = roomName;
+
+  roomDiv.addEventListener("click", () => {
+    if (roomName !== currentRoom) {
+      const pin = prompt(`Enter PIN for ${roomName}:`);
+      if (pin) {
+        joinPrivateRoom(roomName, pin);
+      }
+    }
+  });
+
+  elements.privateRoomsList.appendChild(roomDiv);
+}
+
+// Send message
+function sendMessage() {
+  const message = elements.messageInput.value.trim();
+
+  if (message && currentUser && currentRoom) {
+    socket.emit("send-message", message);
+    elements.messageInput.value = "";
+    elements.messageInput.focus();
+  }
+}
+
+// Add message to chat
+function addMessage(msg) {
   const messageDiv = document.createElement("div");
-  messageDiv.classList.add("message");
-  messageDiv.classList.add(isYou ? "you" : "others");
+  messageDiv.className = "message";
 
-  const time = new Date().toLocaleTimeString([], {
+  const timestamp = new Date(msg.timestamp).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+
   messageDiv.innerHTML = `
-    <strong>${msg.username}</strong>
-    <span class="message-time">${time}</span>
-    <div>${msg.text}</div>
+    <strong>${msg.user}:</strong> ${msg.text}
+    <span class="timestamp">${timestamp}</span>
   `;
 
-  chatBox.appendChild(messageDiv);
-  chatBox.scrollTop = chatBox.scrollHeight;
+  elements.chatBox.appendChild(messageDiv);
+  elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
 }
 
-function appendSystemMessage(text) {
-  const messageDiv = document.createElement("div");
-  messageDiv.classList.add("message");
-  messageDiv.classList.add("system");
-  messageDiv.textContent = text;
-  chatBox.appendChild(messageDiv);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
+// Socket events
+socket.on("new-message", addMessage);
+
+socket.on("user-joined", (username) => {
+  addMessage({
+    user: "System",
+    text: `${username} joined the room`,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+socket.on("user-left", (username) => {
+  addMessage({
+    user: "System",
+    text: `${username} left the room`,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Initialize
+document.addEventListener("DOMContentLoaded", init);

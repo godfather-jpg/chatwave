@@ -1,51 +1,280 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8" />
     <title>JoyChat</title>
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css" />
+    <style>
+      :root {
+        --primary: #4361ee;
+        --secondary: #3a0ca3;
+        --accent: #f72585;
+        --light: #f8f9fa;
+        --dark: #212529;
+        --gray: #6c757d;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: var(--light);
+        color: var(--dark);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        flex: 1;
+      }
+
+      /* Auth Screen */
+      .auth-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        max-width: 500px;
+        margin: 2rem auto;
+      }
+
+      .auth-tabs {
+        display: flex;
+        background: var(--primary);
+      }
+
+      .auth-tabs button {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        background: transparent;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .auth-tabs button.active {
+        background: var(--secondary);
+      }
+
+      .auth-form {
+        padding: 25px;
+        display: none;
+      }
+
+      .auth-form.active {
+        display: block;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 16px;
+      }
+
+      button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        width: 100%;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: var(--secondary);
+      }
+
+      /* Chat Interface */
+      #chatInterface {
+        display: none;
+        height: calc(100vh - 40px);
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .sidebar {
+        width: 250px;
+        background: var(--dark);
+        color: white;
+        height: 100%;
+        float: left;
+        padding: 15px;
+      }
+
+      .main-content {
+        margin-left: 250px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chat-header {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .chat-box {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+      }
+
+      .message-form {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 10px;
+      }
+
+      .message-form input {
+        flex: 1;
+        margin-bottom: 0;
+      }
+
+      .message-form button {
+        width: auto;
+        padding: 0 20px;
+      }
+
+      .room {
+        padding: 10px;
+        margin-bottom: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .room.active {
+        background: var(--primary);
+      }
+
+      /* Mobile Responsive */
+      @media (max-width: 768px) {
+        .sidebar {
+          width: 100%;
+          height: auto;
+          float: none;
+        }
+
+        .main-content {
+          margin-left: 0;
+          height: calc(100vh - 150px);
+        }
+
+        #chatInterface {
+          height: 100vh;
+        }
+      }
+    </style>
   </head>
   <body>
-    <!-- Login Screen -->
-    <div id="authModal" class="modal">
-      <div class="modal-content">
-        <h2>Welcome to JoyChat!</h2>
-        <form id="authForm">
-          <input
-            type="text"
-            id="authUsername"
-            placeholder="Your name"
-            required
-          />
-          <input
-            type="password"
-            id="authPin"
-            placeholder="Enter PIN: --"
-            required
-          />
-          <button type="submit">Join Chat</button>
-        </form>
-      </div>
-    </div>
+    <div class="container">
+      <!-- Auth Screen -->
+      <div id="authScreen">
+        <div class="auth-container">
+          <div class="auth-tabs">
+            <button class="active" data-tab="public">Public</button>
+            <button data-tab="private">Private</button>
+          </div>
 
-    <!-- Chat Interface -->
-    <div class="chat-container">
-      <div class="chat-header">
-        <span>JoyChat</span>
-        <span id="statusIndicator">●</span>
+          <!-- Public Chat -->
+          <div id="publicAuth" class="auth-form active">
+            <input
+              type="text"
+              id="publicUsername"
+              placeholder="Username"
+              required
+            />
+            <input
+              type="password"
+              id="publicPin"
+              placeholder="PIN (----)"
+              required
+            />
+            <button id="joinPublicBtn">Join Public Chat</button>
+          </div>
+
+          <!-- Private Rooms -->
+          <div id="privateAuth" class="auth-form">
+            <div id="privateAuthStep1">
+              <input
+                type="password"
+                id="adminPin"
+                placeholder="Admin PIN (-----)"
+                required
+              />
+              <button id="verifyAdminBtn">Continue</button>
+            </div>
+            <div id="privateAuthStep2" style="display: none">
+              <button id="createRoomBtn">Create New Room</button>
+              <div
+                style="margin: 15px 0; text-align: center; color: var(--gray)"
+              >
+                or
+              </div>
+              <input
+                type="text"
+                id="roomName"
+                placeholder="Room Name"
+                required
+              />
+              <input
+                type="password"
+                id="roomPin"
+                placeholder="Room PIN"
+                required
+              />
+              <input
+                type="text"
+                id="privateUsername"
+                placeholder="Your Name"
+                required
+              />
+              <button id="joinPrivateBtn">Join Private Room</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="chat-box" id="chatBox"></div>
-      <form id="messageForm">
-        <input
-          type="text"
-          id="messageInput"
-          placeholder="Type a message..."
-          autocomplete="off"
-          required
-        />
-        <button type="submit">Send</button>
-      </form>
+
+      <!-- Chat Interface -->
+      <div id="chatInterface">
+        <div class="sidebar">
+          <h3>Rooms</h3>
+          <div class="room-list">
+            <div class="room public active" data-room="public">Public Chat</div>
+            <div id="privateRoomsList"></div>
+          </div>
+        </div>
+        <div class="main-content">
+          <div class="chat-header">
+            <h2 id="roomTitle">Public Chat</h2>
+          </div>
+          <div id="chatBox" class="chat-box"></div>
+          <form id="messageForm" class="message-form">
+            <input
+              type="text"
+              id="messageInput"
+              placeholder="Type a message..."
+              required
+            />
+            <button type="submit">Send</button>
+          </form>
+        </div>
+      </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>

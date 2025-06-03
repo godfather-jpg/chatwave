@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>JoyChat</title>
+    <title>PrivateChat</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
@@ -113,7 +113,7 @@
         height: 100%;
         float: left;
         padding: 15px;
-      }
+        }
 
       .main-content {
         margin-left: 250px;
@@ -257,6 +257,10 @@
           <div class="room-list">
             <div class="room public active" data-room="public">Public Chat</div>
             <div id="privateRoomsList"></div>
+          </div>
+          <div id="sidebar" class="sidebar">
+          <h3>Users in Room:</h3>
+            <ul id="user-list"></ul>
           </div>
         </div>
         <div class="main-content">

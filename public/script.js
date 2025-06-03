@@ -233,15 +233,44 @@ function addMessage(msg) {
   elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
 }
 
-// Socket events
-socket.on("new-message", addMessage);
+// Helper: Update user list display
+function updateUserList(users) {
+  const userListEl = document.getElementById("user-list");
+  if (!userListEl) return;
 
+  userListEl.innerHTML = ""; // Clear current list
+  users.forEach((user) => {
+    const li = document.createElement("li");
+    li.textContent = user;
+    userListEl.appendChild(li);
+  });
+}
+
+// Socket events
+socket.on("new-message", (msg) => {
+  const messageElement = document.createElement("div");
+  messageElement.classList.add("chat-message");
+
+  // Check if the message is a whisper
+  if (msg.text.includes("(whisper to")) {
+    messageElement.classList.add("whisper");
+  }
+
+  messageElement.innerHTML = `<strong>${msg.user}</strong>: ${msg.text}`;
+  chatBox.appendChild(messageElement);
+});
+
+// Handle user-joined event
 socket.on("user-joined", (username) => {
-  addMessage({
+  const systemMessage = {
     user: "System",
     text: `${username} joined the room`,
     timestamp: new Date().toISOString(),
-  });
+  };
+  const messageElement = document.createElement("div");
+  messageElement.classList.add("chat-message", "system-message");
+  messageElement.innerHTML = `<strong>${systemMessage.user}</strong>: ${systemMessage.text}`;
+  chatBox.appendChild(messageElement);
 });
 
 socket.on("user-left", (username) => {
@@ -250,6 +279,11 @@ socket.on("user-left", (username) => {
     text: `${username} left the room`,
     timestamp: new Date().toISOString(),
   });
+});
+
+// NEW: Listen for user list updates
+socket.on("update-users", (users) => {
+  updateUserList(users);
 });
 
 // Initialize

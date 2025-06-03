@@ -1,12 +1,14 @@
 {
-  "name": "joychat",
+  "name": "privatechat",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "better-sqlite3": "^11.10.0",
     "express": "^4.21.2",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7"
   }
 }

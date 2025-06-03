@@ -309,4 +309,9 @@ input {
     width: 36px;
     height: 36px;
   }
+  .chat-message.whisper {
+   background-color: #f0f0f0;
+   font-style: italic;
+   color: #888;
+  }
 }
